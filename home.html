@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatSonic</title>
+    <link href="/css/bootstrap.css" />
+    <!-- Font Awesome CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+      var curQuestion = "";
+      var chatstart = false;
+      var messageDiv;
+      var curDiv;
+      var newDiv = document.createElement("span");
+      newDiv.textContent = "";
+      newDiv.id = "myNewDiv";
+      var curUser;
+
+      function removeherosection() {
+        var element = document.getElementById("herosection");
+        if (chatstart == true) {
+          element.style.display = "none";
+        }
+      }
+
+      function removetext() {
+        var textBox = document.getElementById("chat_input");
+        textBox.value = textBox.value.replace(/[\n\r]/g, ""); // Remove all newline characters (both \n and \r)
+        textBox.value = ""; // Clear the textarea value
+        textBox.placeholder = "Message Chatbot"; // Set the placeholder text
+        document.getElementById("chat_input").disabled = false;
+      }
+
+      function add_question(question) {
+        messageDiv =
+          '<div class="form-control mx-auto rounded-4 my-3" placeholder="Message Chatbot" id="newchat" style="width: 80%;border: none;">' +
+          '<div class="container-fluid p-0 m-0 fw-bold" style="overflow: hidden; word-wrap: break-word;width: 100%;">' +
+          '<strong class="p-0 m-0 fw-bold">' +
+          question +
+          "?</strong><br/><div class='cursor' id='cursor'></div>";
+        $("#load_chats").append(messageDiv);
+      }
+
+      function add_message(question, answer) {
+        var elementToDelete = document.getElementById("cursor");
+        elementToDelete.remove();
+        console.log("Adding message:", answer);
+        var messageDiv = $('<div class="newmessage"></div>');
+        $("#newchat").append(messageDiv);
+        curDiv = document.getElementById("newchat");
+        var currentIndex = 0;
+        var typingSpeed = 1;
+        function displayContent() {
+          if (currentIndex < answer.length) {
+            messageDiv.append(answer[currentIndex]);
+
+            currentIndex++;
+            setTimeout(displayContent, typingSpeed);
+
+            messageDiv.append(newDiv);
+
+            const dobj = document.querySelector("#myNewDiv");
+            dobj.scrollIntoView({ behavior: "smooth" });
+          } else {
+            console.log("Content completely displayed, executing removetext");
+            // var elementToDelete = document.getElementById("myNewDiv");
+            // elementToDelete.remove();
+            messageDiv.append(
+              "<div class='d-flex'><div class='me-auto'></div><div><button onclick='TextToSppech(this)' class='btn fa fa-volume-up'></button></div></div>"
+            );
+            load_chathistory();
+            removetext();
+            curDiv.scrollIntoView({ behavior: "smooth", block: "end" });
+          }
+        }
+        displayContent();
+      }
+
+      function TextToSppech(button) {
+        var text = button.parentNode.parentNode.parentNode.textContent.trim();
+        // alert("Great-grandparent text content: " + greatGrandParentText);
+        var utterance = new SpeechSynthesisUtterance(text);
+        speechSynthesis.speak(utterance);
+      }
+
+      function load_chathistory() {
+        $.ajax({
+          url: "/load_chathistory",
+          type: "POST",
+          contentType: "application/json",
+          success: function (response) {
+            // console.log("Response from load_chathistory server:", JSON.stringify(response));
+            var parsedData = JSON.parse(JSON.stringify(response));
+            var numberOfItems = Object.keys(parsedData).length;
+            // console.log("Number of Chat History:", numberOfItems);
+            var container = document.getElementById("chatHistoryContainer");
+            container.innerHTML = "";
+
+            var numChatHistories = numberOfItems;
+
+            for (var i = 0; i < numChatHistories; i++) {
+              var item = parsedData[i];
+              // console.log(item.message + ": " + item.reply);
+              var anchor = document.createElement("a");
+              anchor.setAttribute("href", "#");
+              anchor.setAttribute(
+                "class",
+                "list-group-item list-group-item-action py-3 lh-sm"
+              );
+              anchor.setAttribute(
+                "style",
+                "color: white; background-color: #070f2b !important; border: none;"
+              );
+              var div = document.createElement("div");
+              div.setAttribute("class", "col-10 mb-1 small px-1");
+              div.textContent = item.message + "?";
+              var parentWidth = container.offsetWidth;
+              div.style.whiteSpace = "nowrap";
+              div.style.overflow = "hidden";
+              div.style.textOverflow = "ellipsis";
+              div.style.maxWidth = parentWidth + "px";
+
+              anchor.appendChild(div);
+
+              container.appendChild(anchor);
+            }
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+            // Handle error
+          },
+        });
+      }
+
+      function texttochat(text) {
+        if (text != "") {
+          chatstart = true;
+          removeherosection();
+          var message = text;
+          document.getElementById("chat_input").disabled = true;
+          curQuestion = message;
+          console.log(message);
+          add_question(curQuestion);
+          $.ajax({
+            url: "/get_response",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ user_input: message }),
+            success: function (response) {
+              console.log("Response from server:", JSON.stringify(response));
+              add_message(curQuestion, response.response);
+              var element = document.getElementById("newchat");
+              // Change the ID to a new one
+              element.setAttribute("id", "oldchat");
+            },
+            error: function (xhr, status, error) {
+              console.error("Error:", error);
+              // Handle error
+            },
+          });
+        }
+      }
+
+      $(function () {
+        $("#chat_input").on("keypress", function (event) {
+          if (event.which === 13 && $(this).val() != "") {
+            chatstart = true;
+            removeherosection();
+            var message = $(this).val();
+            $(this).val("");
+            document.getElementById("chat_input").disabled = true;
+
+            curQuestion = message;
+            console.log(message);
+            add_question(curQuestion);
+            $.ajax({
+              url: "/get_response",
+              type: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({ user_input: message }),
+              success: function (response) {
+                console.log("Response from server:", JSON.stringify(response));
+                add_message(curQuestion, response.response);
+                var element = document.getElementById("newchat");
+                // Change the ID to a new one
+                element.setAttribute("id", "oldchat");
+              },
+              error: function (xhr, status, error) {
+                console.error("Error:", error);
+                // Handle error
+              },
+            });
+          }
+        });
+      });
+
+      function logout() {
+        event.preventDefault(); // Prevent the default form submission behavior
+        console.log("Entered logout");
+        $.ajax({
+          type: "POST",
+          url: "/logout",
+          data: {},
+          success: function (data) {
+            console.log(data);
+            if (data.success) {
+              console.log(data.message);
+              console.log(data.redirect);
+              // Redirect to the specified URL
+              localStorage.setItem("cur_user", null);
+              window.location.href = data.redirect;
+            } else {
+              // Handle unsuccessful login
+              console.log(data.message); // Or display the error message in a more user-friendly way
+            }
+          },
+          error: function (xhr, status, error) {
+            // Handle AJAX errors here
+            console.error("Error:", error);
+            // Show error message to the user
+          },
+        });
+      }
+
+      function reset_password() {
+        console.log("CurUSer : " + curUser);
+        var password = document.getElementById("new_pwd_request").value;
+        console.log(password);
+        $.ajax({
+          type: "POST",
+          url: "/set_password",
+          data: { user: curUser, password: password },
+          success: function (data) {
+            console.log(data);
+            if (data.success == true) {
+              $("#pwd_reset_request").modal("hide");
+            }
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+          },
+        });
+      }
+
+      function reload() {
+        location.reload();
+      }
+
+      function send_history() {
+        $.ajax({
+          type: "POST",
+          url: "/send_history",
+          data: {},
+          success: function (data) {
+            console.log(data.success);
+            console.log(data.message);
+            // alert modal
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+          },
+        });
+      }
+
+      let mediaRecorder;
+      let recordedChunks = [];
+      let isRecording = false;
+      let stream; // Define the stream variable here
+
+      async function toggleRecording() {
+        console.log("toggleRecording() called");
+        if (!isRecording) {
+          document.getElementById("chat_input").disabled = true;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = function (event) {
+              recordedChunks.push(event.data);
+            };
+            mediaRecorder.start();
+            $("#toggleRecording").css("background-color", "red");
+
+            isRecording = true;
+          } catch (err) {
+            console.error("Error accessing microphone", err);
+          }
+        } else {
+          $("#toggleRecording").css("background-color", "rgba(0, 0, 0, 0.553)");
+          if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            await new Promise((resolve) => {
+              mediaRecorder.onstop = resolve;
+            });
+            const blob = new Blob(recordedChunks, { type: "audio/webm" });
+            await sendAudioToBackend(blob);
+          }
+        }
+      }
+
+      async function sendAudioToBackend(audioBlob) {
+        console.log("Sending audio to the server...");
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recorded_audio.webm");
+
+        try {
+          const response = await $.ajax({
+            url: "/transcribe",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+              console.log("Success : ", data);
+              texttochat(data.transcription);
+              removetext();
+              mediaRecorder = null;
+              recordedChunks = [];
+              isRecording = false;
+              // Stop the media stream to release the microphone
+              if (stream) {
+                stream.getTracks().forEach((track) => {
+                  track.stop();
+                });
+              }
+            },
+          });
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      function boxtochat(element) {
+        // Get the text content of the clicked element
+        var text = element.textContent.trim();
+
+        // Output the text to console or do whatever you want with it
+        console.log(text);
+        texttochat(text);
+      }
+
+      function prompttotext(element) {
+        $("#promptmodal").modal("hide");
+        var text = element.textContent.trim();
+
+        // Output the text to console or do whatever you want with it
+        console.log(text);
+        texttochat(text);
+      }
+
+      function openpromptmodal() {
+        $.ajax({
+          url: "/get_prompt_questions",
+          type: "GET",
+          success: function (response) {
+            // Update the webpage with the received questions
+            var questions = response.questions;
+            var questionsList = $("#questionsList");
+            questionsList.empty();
+            $.each(questions, function (index, question) {
+              questionsList.append(
+                '<div class="card mx-3 mb-3 p-3 border-1 shadow-sm promptbox" style="          background-color: #fff;transition: all 0.3s ease-in-out;cursor: pointer;width: 95% !important;"onclick="prompttotext(this)"><div class="card-body p-0 m-0"><p class="card-text p-0 m-0" style="font-size: 18px; color: #333">' +
+                  question +
+                  "</p></div></div>"
+              );
+            });
+            $("#promptmodal").modal("show");
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+          },
+        });
+      }
+
+      $(document).ready(function () {
+        $.ajax({
+          type: "POST",
+          url: "/get_user",
+          data: {},
+          success: function (data) {
+            console.log(data);
+            if (data.success == true) {
+              if (data.pwd_reset == 1) {
+                curUser = data.user;
+                $("#pwd_reset_request").modal("show");
+              }
+              curUser = data.user;
+              var name = data.user_name;
+              var setname = document.getElementById("user_name");
+
+              setname.textContent = name;
+
+              var setfirstletter = document.getElementById("first_letter");
+
+              // Set the text content of the span
+              setfirstletter.textContent = name[0].toUpperCase();
+            } else {
+              console.log("Session is not valid");
+              window.location.href = "/";
+            }
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+          },
+        });
+        console.log(JSON.stringify(curUser));
+
+        load_chathistory();
+      });
+    </script>
+    <style>
+      .circle {
+        width: 40px; /* Adjusted width */
+        height: 40px; /* Adjusted height */
+        border-radius: 50%;
+        background-color: #2d84a8; /* Blue color, you can change it */
+        color: white;
+        font-size: 20px; /* Adjusted font size */
+        text-align: center;
+        line-height: 40px; /* Vertical centering */
+        margin-right: 10px;
+        display: inline-block;
+      }
+
+      .cursor {
+        width: 10px;
+        height: 20px;
+        background-color: #000;
+        display: inline-block;
+        animation: blink-animation 1s step-end infinite;
+      }
+
+      @keyframes blink-animation {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .sticky-element {
+        position: sticky;
+        top: 0px;
+        z-index: 100;
+        background-color: #ffffff;
+      }
+      .form-control:focus {
+        outline: none;
+        box-shadow: none;
+      }
+      textarea {
+        resize: none;
+      }
+
+      #scrolllock::-webkit-scrollbar {
+        width: 0;
+      }
+
+      #scrolllock::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      #scrollwidth::-webkit-scrollbar {
+        width: 0px;
+      }
+
+      #scrollwidth::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      #scrollwidth::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 0px;
+      }
+
+      .box11:hover {
+        transform: scale(1.05);
+        transition: 0.3s ease;
+      }
+      .box11:not(:hover) {
+        transition: 0.3s ease;
+      }
+
+      .promptbox:hover {
+        transform: scale(1.02);
+        transition: 0.3s ease;
+      }
+      .promptbox:not(:hover) {
+        transition: 0.3s ease;
+      }
+
+      #btn1:hover {
+        transform: scale(1.05);
+        transition: 0.3s ease;
+      }
+
+      #btn1:not(:hover) {
+        transition: 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid d-flex flex-row">
+      <div
+        id="scrollwidth"
+        class="d-flex flex-column align-items-stretch flex-shrink-0"
+        style="
+          width: 20%;
+          height: 100vh;
+          overflow: scroll;
+          background-color: #070f2b !important;
+          border: none;
+        "
+      >
+        <div
+          class="container-fluid sticky-element px-0 my-2 mt-5"
+          style="width: 80%; background-color: #271550"
+        >
+          <button
+            class="fs-6 p-0 rounded-4"
+            style="
+              width: 100% !important;
+              height: 100%;
+              background-color: #512da8;
+              border: none;
+              color: white;
+              align-items: center;
+              justify-content: center;
+            "
+            id="btn1"
+            onclick="reload()"
+          >
+            <div class="p-0 py-2 w-100">New Chat</div>
+          </button>
+        </div>
+        <div
+          class="list-group list-group-flush scrollarea mt-3 mb-auto"
+          style="border: none"
+          id="chatHistoryContainer"
+        ></div>
+        <div class="mx-3" style="color: white">
+          <div class="circle" id="first_letter"></div>
+          <span id="user_name"></span>
+        </div>
+      </div>
+      <main
+        class="d-flex flex-column align-items-stretch flex-shrink-0 pb-3"
+        style="
+          width: 80%;
+          max-height: 100vh;
+          background-image: linear-gradient(to right, #e2e2e2, #c9d6ff);
+        "
+      >
+        <nav
+          class="navbar navbar-expand-lg px-4"
+          style="max-height: 10vh; z-index: 1000 !important"
+        >
+          <div class="container-fluid">
+            <a class="navbar-brand" href="#"
+              ><div class="logo-name fs-5 fw-semibold">
+                <span>Chat</span><span style="color: #1972d2">Sonic</span>
+              </div></a
+            >
+            <button
+              class="navbar-toggler"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
+            >
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                  <button
+                    class="btn btn-outline-dark mx-2"
+                    onclick="openpromptmodal()"
+                  >
+                    Prompt Library
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button
+                    class="btn btn-outline-primary mx-2"
+                    onclick="send_history()"
+                  >
+                    Mail History
+                  </button>
+                </li>
+              </ul>
+              <form class="d-flex" role="search">
+                <!-- <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"> -->
+                <button class="btn btn-outline-danger" onclick="logout()">
+                  Logout
+                </button>
+              </form>
+            </div>
+          </div>
+        </nav>
+
+        <div
+          id="scrolllock"
+          class="d-flex flex-column align-items-stretch flex-shrink-0 px-5 py-3 mb-auto"
+          style="width: 100%; height: 76vh; overflow-y: scroll"
+        >
+          <!-- Loading chats  -->
+
+          <div class="container-fluid" id="load_chats"></div>
+
+          <div
+            class="form-control rounded-4 mt-auto mx-auto text-center"
+            placeholder="Message Chatbot"
+            id="herosection"
+            style="
+              width: 80%;
+              border: none;
+              background-color: transparent !important;
+            "
+          >
+            <div
+              class="container-fluid mt-4 fs-1"
+              style="
+                font-size: 36px;
+                font-family: Georgia, 'Times New Roman', Times, serif;
+                font-weight: bold;
+                background: linear-gradient(
+                  90deg,
+                  #3ba9f3,
+                  #3fccf7,
+                  #3dc5f7,
+                  #22b0ed,
+                  #2d47a8,
+                  #512da8,
+                  #8f2da8,
+                  #a33fbc,
+                  #00ced1,
+                  #1e90ff,
+                  #4682b4,
+                  #7b68ee
+                );
+                -webkit-background-clip: text; /* For Safari */
+                -moz-background-clip: text; /* For Firefox */
+                -ms-background-clip: text; /* For IE */
+                -o-background-clip: text; /* For Opera */
+                background-clip: text; /* Standard property */
+                -webkit-text-fill-color: transparent; /* For Safari */
+              "
+            >
+              ChatSonic
+            </div>
+
+            <div
+              class="container-fluid mb-5 fs-3 me-auto"
+              style="
+                font-family: sans-serif;
+                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.137);
+                color: #000207bd;
+              "
+            >
+              How can I help you today?
+            </div>
+
+            <div class="container-fluid w-100 mt-5 d-flex">
+              <div
+                class="card mx-3 mb-3 p-3 border-1 shadow-sm box11"
+                style="
+                  background-color: #fff;
+                  width: 50%;
+                  transition: all 0.3s ease-in-out;
+                  cursor: pointer;
+                "
+                onclick="boxtochat(this)"
+              >
+                <div class="card-body p-0 m-0">
+                  <p
+                    class="card-text p-0 m-0"
+                    style="font-size: 18px; color: #333"
+                  >
+                    What is debit card
+                  </p>
+                </div>
+              </div>
+              <div
+                class="card mx-3 mb-3 p-3 border-1 shadow-sm box11"
+                style="
+                  background-color: #fff;
+                  width: 50%;
+                  transition: all 0.3s ease-in-out;
+                  cursor: pointer;
+                "
+                onclick="boxtochat(this)"
+              >
+                <div class="card-body p-0 m-0">
+                  <p
+                    class="card-text p-0 m-0"
+                    style="font-size: 18px; color: #333"
+                  >
+                    What is credit card
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="container-fluid mb-3 w-100 d-flex">
+              <div
+                class="card mx-3 mb-3 p-3 border-1 shadow-sm box11"
+                style="
+                  background-color: #fff;
+                  width: 50%;
+                  transition: all 0.3s ease-in-out;
+                  cursor: pointer;
+                "
+                onclick="boxtochat(this)"
+              >
+                <div class="card-body p-0 m-0">
+                  <p
+                    class="card-text p-0 m-0"
+                    style="font-size: 18px; color: #333"
+                  >
+                    What is CVV in debit card
+                  </p>
+                </div>
+              </div>
+              <div
+                class="card mx-3 mb-3 p-3 border-1 shadow-sm box11"
+                style="
+                  background-color: #fff;
+                  width: 50%;
+                  transition: all 0.3s ease-in-out;
+                  cursor: pointer;
+                "
+                onclick="boxtochat(this)"
+              >
+                <div class="card-body p-0 m-0">
+                  <p
+                    class="card-text p-0 m-0"
+                    style="font-size: 18px; color: #333"
+                  >
+                    How to open savings account
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container-fluid text-center">
+          <textarea
+            class="form-control mx-auto rounded-4"
+            placeholder="Message Chatbot"
+            id="chat_input"
+            style="height: 9vh; width: 80%; padding-right: 5%"
+          ></textarea
+          ><button
+            class="button fs-4 border px-3 border-2 rounded-4"
+            id="toggleRecording"
+            onclick="toggleRecording()"
+            style="
+              position: relative;
+              right: -36%;
+              top: -54%;
+              height: 40%;
+              color: #ffffff;
+              background-color: rgba(0, 0, 0, 0.553);
+            "
+          >
+            <!-- &#x2191; -->
+            <i style="font-size: 24px" class="fa">&#xf130;</i>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal for password reset request-->
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="pwd_reset_request"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Reset Your Password
+            </h1>
+          </div>
+          <div class="modal-body">
+            <label for="recipient-name" class="col-form-label"
+              >Enter Your New Password :</label
+            >
+            <input
+              type="text"
+              placeholder="Password"
+              class="form-control"
+              id="new_pwd_request"
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="reset_password()"
+            >
+              Set Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for prompt library-->
+    <div
+      class="modal fade"
+      id="promptmodal"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">
+              Prompt Library
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="questionsList">
+            <div
+              class="card mx-3 mb-3 p-3 border-1 shadow-sm promptbox"
+              style="
+                background-color: #fff;
+                transition: all 0.3s ease-in-out;
+                cursor: pointer;
+                width: 95% !important;
+              "
+              onclick="getText(this)"
+            >
+              <div class="card-body p-0 m-0">
+                <p
+                  class="card-text p-0 m-0"
+                  style="font-size: 18px; color: #333"
+                >
+                  What is debit card
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- <script src="js/bootstrap.js"></script> -->
+    <script src="/js/bootstrap.js"></script>
+  </body>
+</html>

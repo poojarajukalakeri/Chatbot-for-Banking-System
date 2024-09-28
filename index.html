@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <title>Login</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        background-color: #c9d6ff;
+        background: linear-gradient(to right, #e2e2e2, #c9d6ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .container {
+        background-color: #fff;
+        border-radius: 30px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+        width: 768px;
+        max-width: 100%;
+        min-height: 480px;
+      }
+
+      .container p {
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: 0.3px;
+        margin: 20px 0;
+      }
+
+      .container span {
+        font-size: 12px;
+      }
+
+      .container a {
+        color: #333;
+        font-size: 13px;
+        text-decoration: none;
+        margin: 15px 0 10px;
+      }
+
+      .container button {
+        background-color: #512da8;
+        color: #fff;
+        font-size: 12px;
+        padding: 10px 45px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .container button.hidden {
+        background-color: transparent;
+        border-color: #fff;
+      }
+
+      .container form {
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 40px;
+        height: 100%;
+      }
+
+      .container input {
+        background-color: #eee;
+        border: none;
+        margin: 8px 0;
+        padding: 10px 15px;
+        font-size: 13px;
+        border-radius: 8px;
+        width: 100%;
+        outline: none;
+      }
+
+      .form-container {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        transition: all 0.6s ease-in-out;
+      }
+
+      .sign-in {
+        left: 0;
+        width: 50%;
+        z-index: 2;
+      }
+
+      .container.active .sign-in {
+        transform: translateX(100%);
+      }
+
+      .sign-up {
+        left: 0;
+        width: 50%;
+        opacity: 0;
+        z-index: 1;
+      }
+
+      .container.active .sign-up {
+        transform: translateX(100%);
+        opacity: 1;
+        z-index: 5;
+        animation: move 0.6s;
+      }
+
+      @keyframes move {
+        0%,
+        49.99% {
+          opacity: 0;
+          z-index: 1;
+        }
+        50%,
+        100% {
+          opacity: 1;
+          z-index: 5;
+        }
+      }
+
+      .social-icons {
+        margin: 20px 0;
+      }
+
+      .social-icons a {
+        border: 1px solid #ccc;
+        border-radius: 20%;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 3px;
+        width: 40px;
+        height: 40px;
+      }
+
+      .toggle-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 50%;
+        height: 100%;
+        overflow: hidden;
+        transition: all 0.6s ease-in-out;
+        border-radius: 150px 0 0 100px;
+        z-index: 1000;
+      }
+
+      .container.active .toggle-container {
+        transform: translateX(-100%);
+        border-radius: 0 150px 100px 0;
+      }
+
+      .toggle {
+        background-color: #512da8;
+        height: 100%;
+        background: linear-gradient(to right, #5c6bc0, #512da8);
+        color: #fff;
+        position: relative;
+        left: -100%;
+        height: 100%;
+        width: 200%;
+        transform: translateX(0);
+        transition: all 0.6s ease-in-out;
+      }
+
+      .container.active .toggle {
+        transform: translateX(50%);
+      }
+
+      .toggle-panel {
+        position: absolute;
+        width: 50%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 30px;
+        text-align: center;
+        top: 0;
+        transform: translateX(0);
+        transition: all 0.6s ease-in-out;
+      }
+
+      .toggle-left {
+        transform: translateX(-200%);
+      }
+
+      .container.active .toggle-left {
+        transform: translateX(0);
+      }
+
+      .toggle-right {
+        right: 0;
+        transform: translateX(0);
+      }
+
+      .container.active .toggle-right {
+        transform: translateX(200%);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="container">
+      <div class="form-container sign-up">
+        <form>
+          <h1>Create Account</h1>
+          <div class="social-icons">
+          </div>
+          <span>Use your email for registeration</span>
+          <input id="getsignupname" type="text" placeholder="Name" />
+          <input id="getsignupemail" type="email" placeholder="Email" />
+          <input
+            id="getsignuppassword"
+            type="password"
+            placeholder="Password"
+          />
+          <button onclick="signup()">Sign Up</button>
+        </form>
+      </div>
+      <div class="form-container sign-in">
+        <form>
+          <h1>Sign In</h1>
+          <div class="social-icons">
+          </div>
+          <span>Enter your email and password</span>
+          <input id="getemail" type="email" placeholder="Email" />
+          <input id="getpassword" type="password" placeholder="Password" />
+          <a href="#" onclick="open_password_reset_modal()"
+            >Forget Your Password?</a
+          >
+          <button onclick="login()">Sign In</button>
+        </form>
+      </div>
+      <div class="toggle-container">
+        <div class="toggle">
+          <div class="toggle-panel toggle-left">
+            <h1>Welcome Back!</h1>
+            <p>Enter your personal details to use all of site features</p>
+            <button class="hidden" id="login">Sign In</button>
+          </div>
+          <div class="toggle-panel toggle-right">
+            <h1>Hello, Friend!</h1>
+            <p>
+              Register with your personal details to use all of site features
+            </p>
+            <button class="hidden" id="register">Sign Up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for password reset -->
+    <div
+      class="modal fade"
+      id="password_reset_modal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Password Reset
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="load_error">
+            <div class="input-group flex-nowrap">
+              <span class="input-group-text" id="addon-wrapping">@</span>
+              <input
+                type="email"
+                id="email_for_reset"
+                class="form-control"
+                placeholder="Email"
+                aria-label="Username"
+                aria-describedby="addon-wrapping"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" onclick="sendotp()">
+              Send OTP
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for password success message -->
+    <div
+      class="modal fade"
+      id="password_reset_success_modal"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">
+              Password Reset Successfully
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            Your password has been sent to your email. Please log in and reset
+            your password.
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal to enter otp-->
+    <div
+      class="modal fade"
+      id="opt_verify_modal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Enter OTP For Email Verification
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="load_error_otp">
+            <div class="input-group flex-nowrap">
+              <input
+                type="text"
+                id="otp_to_verify"
+                class="form-control"
+                placeholder="Enter the OTP"
+                aria-label="Username"
+                aria-describedby="addon-wrapping"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" onclick="verifyotp()">
+              Verify
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for successfull registeration-->
+    <div
+      class="modal fade"
+      id="register_success"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Registeration Successfull
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            Your registration has been completed successfully.Now you can log
+            in.
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              onclick="page_reload()"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for email already exists-->
+    <div
+      class="modal fade"
+      id="email_exists"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Email already exists
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            An email with this address already exists in our database.
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              onclick="page_reload()"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const container = document.getElementById("container");
+      const registerBtn = document.getElementById("register");
+      const loginBtn = document.getElementById("login");
+      var verify_otp = "";
+
+      registerBtn.addEventListener("click", () => {
+        container.classList.add("active");
+      });
+
+      loginBtn.addEventListener("click", () => {
+        container.classList.remove("active");
+      });
+
+      function sendotp() {
+        var divToRemove = document.getElementById("invalid_email_reset");
+        if (divToRemove) {
+          divToRemove.remove();
+        }
+        var email = document.getElementById("email_for_reset").value;
+        console.log(email);
+        $.ajax({
+          type: "POST",
+          url: "/sendotp",
+          data: {
+            email: email,
+          },
+          success: function (data) {
+            if (data.success) {
+              $("#password_reset_modal").modal("hide");
+              $("#password_reset_success_modal").modal("show");
+              console.log(data.message);
+            } else {
+              console.log(data.message);
+              var newDiv = document.createElement("div");
+              newDiv.classList.add("alert", "alert-danger", "mt-3");
+              newDiv.id = "invalid_email_reset";
+              newDiv.setAttribute("role", "alert");
+              newDiv.textContent = "Please Enter a valid Email Address";
+              var parentDiv = document.getElementById("load_error");
+              parentDiv.appendChild(newDiv);
+            }
+          },
+          error: function (xhr, status, error) {
+            // Handle AJAX errors here
+            console.error("Error:", error);
+            // Show error message to the user
+          },
+        });
+      }
+
+      function open_password_reset_modal() {
+        var divToRemove = document.getElementById("invalid_email_reset");
+        if (divToRemove) {
+          divToRemove.remove();
+        }
+        $("#password_reset_modal").modal("show");
+      }
+
+      function login() {
+        event.preventDefault(); // Prevent the default form submission behavior
+        console.log("Entered login function");
+        email = document.getElementById("getemail").value;
+        password = document.getElementById("getpassword").value;
+        console.log("email : " + email);
+        console.log("password : " + password);
+        $.ajax({
+          type: "POST",
+          url: "/login",
+          data: {
+            email: email,
+            password: password,
+          },
+          success: function (data) {
+            if (data.success) {
+              console.log(data.message);
+              console.log(data.redirect);
+              localStorage.setItem("cur_user", email);
+              window.location.href = data.redirect;
+            } else {
+              // Handle unsuccessful login
+              console.log(data.message);
+            }
+          },
+          error: function (xhr, status, error) {
+            // Handle AJAX errors here
+            console.error("Error:", error);
+            // Show error message to the user
+          },
+        });
+      }
+
+      function signup() {
+        event.preventDefault(); // Prevent the default form submission behavior
+        console.log("Entered signup function");
+        email = document.getElementById("getsignupemail").value;
+        name = document.getElementById("getsignupname").value;
+        password = document.getElementById("getsignuppassword").value;
+        console.log("email : " + email);
+        console.log("password : " + password);
+        console.log("name : " + name);
+        $.ajax({
+          type: "POST",
+          url: "/sign_up",
+          data: {
+            email: email,
+            name: name,
+            password: password,
+          },
+          success: function (data) {
+            if (data.success) {
+              console.log(data.message);
+              verify_otp = data.otp;
+              console.log(verify_otp);
+              $("#opt_verify_modal").modal("show");
+            } else {
+              // Handle unsuccessful login
+              console.log(data.message);
+              if (data.flag == 1) {
+                $("#email_exists").modal("show");
+              }
+            }
+          },
+          error: function (xhr, status, error) {
+            // Handle AJAX errors here
+            console.error("Error:", error);
+            // Show error message to the user
+          },
+        });
+      }
+
+      function verifyotp() {
+        var divToRemove = document.getElementById("invalid_email_reset_otp");
+        if (divToRemove) {
+          divToRemove.remove();
+        }
+        email = document.getElementById("getsignupemail").value;
+        name = document.getElementById("getsignupname").value;
+        password = document.getElementById("getsignuppassword").value;
+        otp = document.getElementById("otp_to_verify").value;
+        console.log(verify_otp);
+        if (otp == verify_otp) {
+          console.log("Verified OTP");
+          $.ajax({
+            type: "POST",
+            url: "/verify_otp",
+            data: {
+              email: email,
+              name: name,
+              password: password,
+            },
+            success: function (data) {
+              if (data.success) {
+                console.log(data.message);
+                $("#register_success").modal("show");
+              } 
+            },
+            error: function (xhr, status, error) {
+              // Handle AJAX errors here
+              console.error("Error:", error);
+              // Show error message to the user
+            },
+          });
+        }
+        else {
+                // Handle unsuccessful login
+                console.log("Incorrect OTP");
+                var newDiv = document.createElement("div");
+                newDiv.classList.add("alert", "alert-danger", "mt-3");
+                newDiv.id = "invalid_email_reset_otp";
+                newDiv.setAttribute("role", "alert");
+                newDiv.textContent = "Incorrect OTP";
+                var parentDiv = document.getElementById("load_error_otp");
+                parentDiv.appendChild(newDiv);
+              }
+      }
+
+      function page_reload() {
+        window.location.href = "/";
+      }
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
